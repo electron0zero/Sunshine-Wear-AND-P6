@@ -29,11 +29,22 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 import android.widget.Toast;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.MessageEvent;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.Wearable;
 
 import java.lang.ref.WeakReference;
 import java.util.Calendar;
@@ -47,6 +58,11 @@ import java.util.concurrent.TimeUnit;
 public class SunshineWatchFaceService extends CanvasWatchFaceService {
     private static final Typeface NORMAL_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
+
+    public static final String TAG = "WatchFaceService";
+    public static final String MSG_PATH = "/wear/sunshine/path";
+    public static final String READY_MSG = "ready";
+
 
     /**
      * Update rate in milliseconds for interactive mode. We update once a second since seconds are
@@ -84,7 +100,12 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         }
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine {
+    private class Engine extends CanvasWatchFaceService.Engine
+            implements MessageApi.MessageListener,
+            NodeApi.NodeListener,
+            GoogleApiClient.OnConnectionFailedListener,
+            GoogleApiClient.ConnectionCallbacks {
+
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
@@ -100,6 +121,9 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         };
         float mXOffset;
         float mYOffset;
+
+        GoogleApiClient mGoogleApiClient;
+        boolean mSwitchedToThisWatchFace = false;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -127,6 +151,19 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
 
             mCalendar = Calendar.getInstance();
+
+
+            mGoogleApiClient = new GoogleApiClient.Builder(SunshineWatchFaceService.this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(Wearable.API)
+                    .build();
+
+            mGoogleApiClient.connect();
+
+            mSwitchedToThisWatchFace = true;
+            Log.d(TAG, "onCreate: Watchface created");
+            sendReadyMessageToPhone();
         }
 
         @Override
@@ -275,6 +312,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             if (shouldTimerBeRunning()) {
                 mUpdateTimeHandler.sendEmptyMessage(MSG_UPDATE_TIME);
             }
+            Log.d(TAG, "updateTimer: Called");
         }
 
         /**
@@ -297,5 +335,71 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
             }
         }
+
+        @Override
+        public void onMessageReceived(MessageEvent messageEvent) {
+
+        }
+
+        @Override
+        public void onPeerConnected(Node node) {
+            sendReadyMessageToPhone();
+            Log.d(TAG, "onPeerConnected: conncted");
+        }
+
+        @Override
+        public void onPeerDisconnected(Node node) {
+
+        }
+
+        @Override
+        public void onConnected(@Nullable Bundle bundle) {
+
+            Log.d(TAG, "onConnected: GMS connected");
+            if(mSwitchedToThisWatchFace){
+                sendReadyMessageToPhone();
+                mSwitchedToThisWatchFace = false;
+            }
+
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+
+        }
+
+        @Override
+        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+            Log.d(TAG, "onConnectionFailed: failed");
+
+        }
+
+        /**
+         * Sends a msg using the <code>MessageApi</code> to tell that we are ready to receive
+         * forecast
+         */
+        private void sendReadyMessageToPhone(){
+            if(mGoogleApiClient.isConnected()) {
+                new Thread(){
+                    @Override
+                    public void run() {
+                        NodeApi.GetConnectedNodesResult nodesList =
+                                Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).await();
+
+                        for(Node node : nodesList.getNodes()){
+                            Log.d(TAG, "run: found a node");
+                            Wearable.MessageApi.sendMessage(
+                                    mGoogleApiClient,
+                                    node.getId(),
+                                    MSG_PATH,
+                                    READY_MSG.getBytes()).await();
+                        }
+                    }
+                }.start();
+                Log.d(TAG, "sendReadyMessageToPhone: Called");
+            }
+        }
+
+
     }
 }
