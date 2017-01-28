@@ -24,8 +24,6 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.Typeface;
@@ -57,16 +55,13 @@ import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
-import com.google.android.gms.wearable.MessageApi;
-import com.google.android.gms.wearable.MessageEvent;
-import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -128,7 +123,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
-        Paint mTextPaint;
         boolean mAmbient;
         Calendar mCalendar;
         private int specW, specH;
@@ -166,7 +160,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                     .setHotwordIndicatorGravity(Gravity.CENTER_HORIZONTAL| Gravity.TOP)
                     .setAcceptsTapEvents(true)
                     .build());
-            Resources resources = SunshineWatchFaceService.this.getResources();
 
             LayoutInflater inflater =
                     (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -287,9 +280,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
             if (mAmbient != inAmbientMode) {
                 mAmbient = inAmbientMode;
-                if (mLowBitAmbient) {
-                    mTextPaint.setAntiAlias(!inAmbientMode);
-                }
+
                 if (inAmbientMode) {
                     mWatchFaceLayout.setBackgroundColor(getResources().getColor(R.color.black));
                     mDateText.setTextColor(getResources().getColor(R.color.white));
@@ -345,8 +336,8 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             mCalendar.setTimeInMillis(now);
 
             String time = mAmbient
-                    ? String.format("%s", new SimpleDateFormat("hh:mm").format(mCalendar.getTimeInMillis()))
-                    : String.format("%s", new SimpleDateFormat("HH:mm:ss").format(mCalendar.getTimeInMillis()));
+                    ? String.format("%s", new SimpleDateFormat("hh:mm", Locale.US).format(mCalendar.getTimeInMillis()))
+                    : String.format("%s", new SimpleDateFormat("HH:mm:ss", Locale.US).format(mCalendar.getTimeInMillis()));
 
             String date = String.format("%s, %s %02d %04d", new SimpleDateFormat("EEE").
                     format(mCalendar.get(Calendar.DAY_OF_WEEK)), new SimpleDateFormat("MMM").
