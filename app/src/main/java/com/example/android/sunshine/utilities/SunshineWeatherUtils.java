@@ -16,10 +16,14 @@
 package com.example.android.sunshine.utilities;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import com.example.android.sunshine.R;
 import com.example.android.sunshine.data.SunshinePreferences;
+import com.google.android.gms.wearable.Asset;
+
+import java.io.ByteArrayOutputStream;
 
 /**
  * Contains useful utilities for a weather app, such as conversion between Celsius and Fahrenheit,
@@ -416,4 +420,14 @@ public final class SunshineWeatherUtils {
         Log.e(LOG_TAG, "Unknown Weather: " + weatherId);
         return R.drawable.art_storm;
     }
+
+    public static Asset compressedAssetFromBitmap(Bitmap bitmap) {
+        final ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        // Compress the Image for watch, PNG is not so good don't use
+        // 10 is compressor Quality, Accepts 0 - 100
+        // 0 = MAX Compression & 100 = Least Compression
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 10, byteStream);
+        return Asset.createFromBytes(byteStream.toByteArray());
+    }
+
 }

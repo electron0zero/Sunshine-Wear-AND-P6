@@ -40,6 +40,8 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
@@ -60,8 +62,11 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
 
     public static final String TAG = "WatchFaceService";
-    public static final String MSG_PATH = "/wear/sunshine/path";
-    public static final String READY_MSG = "ready";
+
+    // KEYS for WatchFace data Syncing thing
+    private static final String TEMP_HIGH = "com.sunshine.weather.maxTemp";
+    private static final String TEMP_LOW = "com.sunshine.weather.minTemp";
+    private static final String CONDITION = "com.sunshine.weather.condition";
 
 
     /**
@@ -101,9 +106,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
     }
 
     private class Engine extends CanvasWatchFaceService.Engine
-            implements MessageApi.MessageListener,
-            NodeApi.NodeListener,
-            GoogleApiClient.OnConnectionFailedListener,
+            implements DataApi.DataListener, GoogleApiClient.OnConnectionFailedListener,
             GoogleApiClient.ConnectionCallbacks {
 
         final Handler mUpdateTimeHandler = new EngineHandler(this);
@@ -112,6 +115,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         Paint mTextPaint;
         boolean mAmbient;
         Calendar mCalendar;
+
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -119,6 +123,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                 invalidate();
             }
         };
+
         float mXOffset;
         float mYOffset;
 
@@ -162,8 +167,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             mGoogleApiClient.connect();
 
             mSwitchedToThisWatchFace = true;
-            Log.d(TAG, "onCreate: Watchface created");
-            sendReadyMessageToPhone();
+            Log.d(TAG, "onCreate: WatchFace created");
         }
 
         @Override
@@ -336,28 +340,12 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             }
         }
 
-        @Override
-        public void onMessageReceived(MessageEvent messageEvent) {
-
-        }
-
-        @Override
-        public void onPeerConnected(Node node) {
-            sendReadyMessageToPhone();
-            Log.d(TAG, "onPeerConnected: conncted");
-        }
-
-        @Override
-        public void onPeerDisconnected(Node node) {
-
-        }
 
         @Override
         public void onConnected(@Nullable Bundle bundle) {
 
             Log.d(TAG, "onConnected: GMS connected");
             if(mSwitchedToThisWatchFace){
-                sendReadyMessageToPhone();
                 mSwitchedToThisWatchFace = false;
             }
 
@@ -374,32 +362,9 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
         }
 
-        /**
-         * Sends a msg using the <code>MessageApi</code> to tell that we are ready to receive
-         * forecast
-         */
-        private void sendReadyMessageToPhone(){
-            if(mGoogleApiClient.isConnected()) {
-                new Thread(){
-                    @Override
-                    public void run() {
-                        NodeApi.GetConnectedNodesResult nodesList =
-                                Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).await();
-
-                        for(Node node : nodesList.getNodes()){
-                            Log.d(TAG, "run: found a node");
-                            Wearable.MessageApi.sendMessage(
-                                    mGoogleApiClient,
-                                    node.getId(),
-                                    MSG_PATH,
-                                    READY_MSG.getBytes()).await();
-                        }
-                    }
-                }.start();
-                Log.d(TAG, "sendReadyMessageToPhone: Called");
-            }
+        @Override
+        public void onDataChanged(DataEventBuffer dataEventBuffer) {
+            // DataApi Data Changed Listener
         }
-
-
     }
 }

@@ -18,17 +18,37 @@ package com.example.android.sunshine.sync;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.text.format.DateUtils;
+import android.util.Log;
 
 import com.example.android.sunshine.data.SunshinePreferences;
 import com.example.android.sunshine.data.WeatherContract;
 import com.example.android.sunshine.utilities.NetworkUtils;
 import com.example.android.sunshine.utilities.NotificationUtils;
 import com.example.android.sunshine.utilities.OpenWeatherJsonUtils;
+import com.example.android.sunshine.utilities.SunshineWeatherUtils;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.Asset;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
 
 import java.net.URL;
 
 public class SunshineSyncTask {
+
+    // KEYS for WatchFace data Syncing thing
+    private static final String TEMP_HIGH = "com.sunshine.weather.maxTemp";
+    private static final String TEMP_LOW = "com.sunshine.weather.minTemp";
+    private static final String CONDITION = "com.sunshine.weather.condition";
 
     /**
      * Performs the network request for updated weather, parses the JSON from that request, and
@@ -106,6 +126,8 @@ public class SunshineSyncTask {
 
             /* If the code reaches this point, we have successfully performed our sync */
 
+            // Now Sync WatchFace
+                syncWatchFace(context, weatherValues[0]);
             }
 
         } catch (Exception e) {
@@ -113,4 +135,66 @@ public class SunshineSyncTask {
             e.printStackTrace();
         }
     }
+
+    private static void syncWatchFace(Context context, ContentValues weatherValues) {
+
+        final String TAG = "syncWatchFace";
+
+        double maxTempInCel = (double) weatherValues.get(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP);
+        double minTempInCel = (double) weatherValues.get(WeatherContract.WeatherEntry.COLUMN_MIN_TEMP);
+        int weatherId = (int) weatherValues.get(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID);
+
+        int weatherImageId = SunshineWeatherUtils
+                .getSmallArtResourceIdForWeatherCondition(weatherId);
+
+        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), weatherImageId);
+
+        Asset weatherIconAsset = SunshineWeatherUtils.compressedAssetFromBitmap(bitmap);
+
+        GoogleApiClient mGoogleApiClient = new GoogleApiClient.Builder(context)
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(Bundle connectionHint) {
+                        Log.d(TAG, "onConnected: " + connectionHint);
+                    }
+                    @Override
+                    public void onConnectionSuspended(int cause) {
+                        Log.d(TAG, "onConnectionSuspended: " + cause);
+                    }
+                })
+                .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                    @Override
+                    public void onConnectionFailed(ConnectionResult result) {
+                        Log.d(TAG, "onConnectionFailed: " + result);
+                    }
+                })
+                .addApi(Wearable.API)
+                .build();
+
+        // it's the GO call for connection.
+        mGoogleApiClient.connect();
+
+        PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/weatherData").setUrgent();
+        putDataMapReq.getDataMap().putDouble(TEMP_HIGH, maxTempInCel);
+        putDataMapReq.getDataMap().putDouble(TEMP_LOW, minTempInCel);
+        putDataMapReq.getDataMap().putAsset(CONDITION, weatherIconAsset);
+
+//        putDataMapReq.getDataMap().putLong("time",System.currentTimeMillis());
+
+        PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+        PendingResult<DataApi.DataItemResult> pendingResult =
+                Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq);
+
+        pendingResult.setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+            @Override
+            public void onResult(@NonNull DataApi.DataItemResult result) {
+                if(result.getStatus().isSuccess()) {
+                    Log.d(TAG, "Data item set: " + result.getDataItem().getUri());
+                } else {
+                    Log.d(TAG, "Could not send data item.");
+                }
+            }
+        });
+    }
+
 }
