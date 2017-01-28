@@ -179,8 +179,6 @@ public class SunshineSyncTask {
         putDataMapReq.getDataMap().putDouble(TEMP_LOW, minTempInCel);
         putDataMapReq.getDataMap().putAsset(CONDITION, weatherIconAsset);
 
-//        putDataMapReq.getDataMap().putLong("time",System.currentTimeMillis());
-
         PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
         PendingResult<DataApi.DataItemResult> pendingResult =
                 Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq);

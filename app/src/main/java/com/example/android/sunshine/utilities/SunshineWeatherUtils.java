@@ -426,7 +426,7 @@ public final class SunshineWeatherUtils {
         // Compress the Image for watch, PNG is not so good don't use
         // 10 is compressor Quality, Accepts 0 - 100
         // 0 = MAX Compression & 100 = Least Compression
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 10, byteStream);
+        bitmap.compress(Bitmap.CompressFormat.WEBP, 80, byteStream);
         return Asset.createFromBytes(byteStream.toByteArray());
     }
 
