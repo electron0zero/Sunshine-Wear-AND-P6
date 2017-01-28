@@ -380,7 +380,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             if (shouldTimerBeRunning()) {
                 mUpdateTimeHandler.sendEmptyMessage(MSG_UPDATE_TIME);
             }
-            Log.d(TAG, "updateTimer: Called");
+            // Log.d(TAG, "updateTimer: Called");
         }
 
         /**

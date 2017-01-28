@@ -31,7 +31,8 @@ dependencies {
 
     // wear app
     // GMS for wear
-    compile 'com.google.android.gms:play-services-wearable:10.0.1'
+    // using a lower version then latest due to unavailability of latest version in Wear emulator
+    compile 'com.google.android.gms:play-services-wearable:9.4.0'
     wearApp project(':wear')
 
     // Instrumentation dependencies use androidTestCompile

@@ -24,5 +24,6 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.google.android.support:wearable:2.0.0-beta1'
     // GMS for wear
-    compile 'com.google.android.gms:play-services-wearable:10.0.1'
+    // using a lower version then latest due to unavailability of latest version in Wear emulator
+    compile 'com.google.android.gms:play-services-wearable:9.4.0'
 }
