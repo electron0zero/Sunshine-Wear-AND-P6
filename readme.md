@@ -20,19 +20,9 @@ Clone and import into Android Studio, That's it.
 
 ## Screenshots
 
-#### Round
-
 <p align="center">
-<img src="https://raw.githubusercontent.com/electron0zero/Sunshine-Wear-AND-P6/master/Screenshots/round.png" height="300">
-<img src="https://raw.githubusercontent.com/electron0zero/Sunshine-Wear-AND-P6/master/Screenshots/round-ambi.png" height="300">
-<img src="https://raw.githubusercontent.com/electron0zero/Sunshine-Wear-AND-P6/master/Screenshots/round-frame.png" height="300">
-</p>
-
-#### Square
-
-<p align="center">
-<img src="https://raw.githubusercontent.com/electron0zero/Sunshine-Wear-AND-P6/master/Screenshots/sq.png" height="300">
-<img src="https://raw.githubusercontent.com/electron0zero/Sunshine-Wear-AND-P6/master/Screenshots/sq-ambi.png" height="300">
-<img src="https://raw.githubusercontent.com/electron0zero/Sunshine-Wear-AND-P6/master/Screenshots/sq-frame.png" height="300">
-<img src="https://raw.githubusercontent.com/electron0zero/Sunshine-Wear-AND-P6/master/Screenshots/sq-ambi-frame.png" height="300">
+<img src="Screenshots/1.png" height="300">
+<img src="Screenshots/2.png" height="300">
+<img src="Screenshots/3.png" height="300">
+<img src="Screenshots/4.png" height="300">
 </p>
